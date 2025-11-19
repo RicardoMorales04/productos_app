@@ -74,6 +74,9 @@ class _ProductoScreenBody extends StatelessWidget {
                         }
 
                         print('Imagen:${imagenSeleccionada.path}');
+                        productoService.updateImagenProducto(
+                          imagenSeleccionada.path,
+                        );
                       },
                     ),
                   ),
@@ -90,6 +93,12 @@ class _ProductoScreenBody extends StatelessWidget {
         onPressed: () async {
           //productoForm.isValidForm();
           if (!productoForm.isValidForm()) return;
+
+          final String? imagenUrl = await productoService.subirImagen();
+
+          if(imagenUrl != null){
+            productoForm.producto.imagen = imagenUrl;
+          }
 
           await productoService.crearOActualizarProducto(productoForm.producto);
         },

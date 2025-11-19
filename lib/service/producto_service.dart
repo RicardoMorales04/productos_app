@@ -16,6 +16,8 @@ class ProductoService extends ChangeNotifier {
 
   Producto? productoSeleccionado;
 
+  File? newImagenProducto;
+
   //constructor
   ProductoService() {
     this.obtenerProductos();
@@ -68,7 +70,7 @@ class ProductoService extends ChangeNotifier {
 
     if (producto.id == null) {
       //producto nuevo
-      await this.nuevoProducto(producto); 
+      await this.nuevoProducto(producto);
     } else {
       //producto existente
       await updateProducto(producto);
@@ -90,5 +92,43 @@ class ProductoService extends ChangeNotifier {
     this.productos.add(producto);
 
     return producto.id!;
+  }
+
+  //metodo para actualizar la imagen del producto
+  void updateImagenProducto(String path) {
+    this.productoSeleccionado!.imagen = path;
+    this.newImagenProducto = File.fromUri(Uri(path: path));
+    notifyListeners();
+  }
+
+  //metodo para subir la imagen a cloudinary
+  Future<String?> subirImagen() async {
+    if (this.newImagenProducto == null) return null;
+    notifyListeners();
+
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/fotosUsuarios/image/upload?upload_preset=productos',
+    );
+
+    final imageUploadRequest = http.MultipartRequest('POST', url);
+
+    final file = await http.MultipartFile.fromPath(
+      'file',
+      newImagenProducto!.path,
+    );
+    imageUploadRequest.files.add(file);
+
+    final steamResponse = await imageUploadRequest.send();
+    final resp = await http.Response.fromStream(steamResponse);
+
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
+      print('Error');
+      return null;
+    }
+
+    this.newImagenProducto = null;
+
+    final decodedData = json.decode(resp.body);
+    return decodedData['secure_url'];
   }
 }
